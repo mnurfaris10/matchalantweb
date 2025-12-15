@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout – Matchalant</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#fff2e5}
+header{background:#ff5a00;color:#fff;padding:24px;text-align:center}
+.container{max-width:600px;margin:20px auto;padding:16px}
+.card{background:#fff;border-radius:16px;padding:22px;box-shadow:0 6px 14px rgba(0,0,0,.15)}
+input,select{width:100%;padding:12px;margin-bottom:14px;border-radius:10px;border:1px solid #ccc}
+button{background:#ff5a00;color:#fff;border:none;padding:14px;width:100%;border-radius:30px;font-size:16px;cursor:pointer}
+#payment-instruction{color:#ff5a00;margin-bottom:14px;display:none}
+#qr-code{margin-bottom:14px;display:none}
+#qr-code img{width:150px;border-radius:10px}
+</style>
+</head>
+<body>
+
+<header><h1>Checkout</h1></header>
+
+<div class="container">
+  <div class="card">
+    <h3>Order Summary</h3>
+    <div id="summary"></div>
+
+    <input id="name" placeholder="Full Name">
+    <select id="payment">
+      <option value="">Payment Method</option>
+      <option>Cash on Delivery</option>
+      <option>Online Banking</option>
+      <option>E‑Wallet</option>
+    </select>
+
+    <div id="payment-instruction">
+      🧾 Sila hantar bukti pembayaran ke WhatsApp kami selepas membuat pembayaran.
+    </div>
+
+    <div id="qr-code">
+      📲 Scan QR untuk bayar:
+      <img src="https://via.placeholder.com/150" alt="QR E-Wallet">
+    </div>
+
+    <button id="whatsappBtn">Order via WhatsApp</button>
+  </div>
+</div>
+
+<script>
+// --- Ambil cart dari localStorage, fallback kalau kosong ---
+let items = JSON.parse(localStorage.getItem('cartItems')) || [];
+if(items.length === 0){
+  // Dummy data untuk test
+  items = [
+    {name:"Matcha Latte", qty:2, price:12.5},
+    {name:"Green Tea", qty:1, price:10}
+  ];
+}
+let total = items.reduce((acc,i)=>acc + i.price*i.qty,0);
+
+// --- Papar summary ---
+document.getElementById('summary').innerHTML = items.map(i => ${i.name} x${i.qty} = MYR ${i.price*i.qty}`).join('<br>') + `<br><b>Total: MYR ${total.toFixed(2)}</b>;
+
+// --- Show/hide QR & arahan ikut payment ---
+const paymentSelect = document.getElementById('payment');
+const instruction = document.getElementById('payment-instruction');
+const qrCode = document.getElementById('qr-code');
+
+paymentSelect.addEventListener('change', ()=>{
+  if(items.length === 0){
+    instruction.style.display = 'none';
+    qrCode.style.display = 'none';
+    return;
+  }
+  if(paymentSelect.value === 'Online Banking' || paymentSelect.value === 'E‑Wallet'){
+    instruction.style.display = 'block';
+    qrCode.style.display = 'block';
+  } else {
+    instruction.style.display = 'none';
+    qrCode.style.display = 'none';
+  }
+});
+
+// --- Fungsi open WhatsApp ---
+function openWhatsApp(message){
+  const encodedMsg = encodeURIComponent(message);
+  const phone = "60176139572";
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  let url = isMobile ?
+    https://api.whatsapp.com/send?phone=${phone}&text=${encodedMsg} :
+    https://web.whatsapp.com/send?phone=${phone}&text=${encodedMsg};
+  window.open(url, '_blank');
+}
+
+// --- Button WhatsApp click ---
+document.getElementById('whatsappBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('name').value.trim();
+  const payment = document.getElementById('payment').value;
+
+  if(items.length === 0){
+    alert("Cart kosong! Sila tambah item dahulu.");
+    return;
+  }
+  if(!name || !payment){
+    alert("Sila isi nama dan pilih payment method!");
+    return;
+  }
+
+  let message = `MATCHALANT ORDER
+
+${items.map(i => `${i.name} x${i.qty} = MYR ${i.price*i.qty}`).join('\n')}
+
+Total: MYR ${total.toFixed(2)}
+
+Name: ${name}
+Payment: ${payment}`;
+
+  openWhatsApp(message);
+});
+</script>
+
+</body>
+</html>
